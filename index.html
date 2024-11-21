@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Stack Merge</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            padding: 20px;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h3 {
+            text-align: center;
+            margin-bottom: 10px; 
+        }
+
+        /* Merge Area */
+        #merge-area {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+            position: relative;
+            margin-left: 20px; /* Add space to the left */
+        }
+
+        .merge-container {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            height: calc(100% - 20px);
+            padding: 10px;
+            border: 2px dashed transparent;
+            transition: border-color 0.3s ease-in-out;
+            align-items: center; 
+            justify-content: center; 
+        }
+
+        .merge-container.active {
+            border-color: #64b5f6;
+        }
+
+        .merge-container .word {
+            width: calc(15% - 10px);
+            height: 40px;
+            margin: 5px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            font-size: 12px;
+            font-weight: bold;
+            transition: transform 0.2s ease; 
+        }
+
+        .merge-container .word:hover {
+            transform: scale(1.1); 
+        }
+
+        .merge-indicator { 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(146, 236, 21, 0.8); 
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 10; 
+        }
+
+        /* Select Area */
+        #select-area {
+            width: 30%; 
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #fff;
+            overflow-y: auto;
+        }
+
+        .select-container .word {
+            display: inline-flex; /* Use inline-flex to allow elements to wrap */
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: grab;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+            height: 30px; /* Set a fixed height */
+        }
+
+        .select-container .word:hover {
+            transform: scale(1.1); 
+        }
+        .merge-container.invalid-merge {
+            border-color: #f44336; /* Red color for invalid merge */
+        }
+        /* Bin */
+        #bin {
+            width: 80px; 
+            height: 100px; 
+            background-color: #ffdddd;
+            border: 2px dashed #c62828;
+            border-radius: 10px; 
+            display: flex;
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            text-align: center;
+            color: #c62828;
+            font-weight: bold;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        #bin p {
+            margin: 5px 0; 
+        }
+
+        /* Type-Specific Colors */
+        .frontend { background-color: #e0f7fa; border-color: #00bcd4; color: #006064; }
+        .backend { background-color: #f0f4c3; border-color: #cddc39; color: #689f38; }
+        .database { background-color: #f3e5f5; border-color: #9c27b0; color: #4a148c; }
+        .cloud { background-color: #e8eaf6; border-color: #3f51b5; color: #1a237e; }
+        .data { background-color: #ffe0b2; border-color: #ff9800; color: #e65100; }
+        .devops { background-color: #b3e5fc; border-color: #03a9f4; color: #01579b; }
+        .security { background-color: #f8bbd0; border-color: #e91e63; color: #880e4f; }
+        .mobile { background-color: #c8e6c9; border-color: #4caf50; color: #1b5e20; }
+        .testing { background-color: #dcedc8; border-color: #8bc34a; color: #33691e; }
+        .ai { background-color: #ffcdd2; border-color: #f44336; color: #b71c1c; }
+        .iot { background-color: #bbdefb; border-color: #2196f3; color: #0d47a1; }
+        .blockchain { background-color: #d1c4e9; border-color: #673ab7; color: #311b92; }
+        .merged { background-color:  #ffe0b2; border-color: #ff9800; color: #e65100; }
+
+    </style>
+</head>
+<body>
+    <div id="bin">
+        <p>🗑️</p> 
+        <p>Bin</p> 
+    </div>
+
+    <div id="merge-area">
+        <h3>Merge Area</h3>
+        <div class="merge-container"></div>
+    </div>
+
+    <div id="select-area">
+        <h3>Select Area</h3>
+        <div class="select-container"></div>
+    </div>
+
+    <script>
+        // JavaScript code (merge.js)
+        const selectArea = document.querySelector(".select-container");
+        const mergeArea = document.querySelector(".merge-container");
+        const bin = document.getElementById("bin");
+
+        // Dev Stack Data with Types
+        const words = [
+            { text: "HTML", type: "frontend" },
+            { text: "CSS", type: "frontend" },
+            { text: "JavaScript", type: "frontend" },
+            { text: "Python", type: "backend" },
+            { text: "Java", type: "backend" },
+            { text: "PHP", type: "backend" },
+            { text: "SQL", type: "database" },
+            { text: "Node.js", type: "backend" },
+            { text: "React", type: "frontend" },
+            { text: "Data", type: "data" }, 
+            { text: "Cloud", type: "cloud" },
+            { text: "DevOps", type: "devops" },
+            { text: "Docker", type: "cloud" },
+            { text: "Analytics", type: "data" },
+            { text: "AI", type: "ai" },
+            { text: "Monitoring", type: "devops" },
+            { text: "Security", type: "security" },
+            { text: "GraphQL", type: "backend" },
+            { text: "Mobile", type: "mobile" },
+            { text: "Kubernetes", type: "cloud" },
+            { text: "UI", type: "frontend" },
+            { text: "Big Data", type: "data" },
+            { text: "Testing", type: "testing" },
+            { text: "Language", type: "ai" },
+            { text: "NLP", type: "ai" },
+            { text: "IoT", type: "iot" },
+            { text: "Blockchain", type: "blockchain" },
+            { text: "Kotlin", type: "mobile" },
+            { text: "Swift", type: "mobile" },
+            { text: "UIKit", type: "mobile" }
+        ];
+
+        const merges = {
+            "HTML+CSS": "Styling",
+            "CSS+HTML": "Styling",
+            "Styling+JavaScript": "Frontend",
+            "JavaScript+Styling": "Frontend",
+            "Python+Data": "Processing",
+            "Data+Python": "Processing",
+            "SQL+Data": "Database",
+            "Data+SQL": "Database",
+            "PHP+Python": "Backend",
+            "Python+PHP": "Backend",
+            "Backend+SQL": "Database Backend",
+            "SQL+Backend": "Database Backend",
+            "Frontend+Backend": "Fullstack",
+            "Backend+Frontend": "Fullstack",
+            "Fullstack+Cloud": "Cloud App",
+            "Cloud+Fullstack": "Cloud App",
+            "Fullstack+DevOps": "CICD",
+            "DevOps+Fullstack": "CICD",
+            "DevOps+Cloud": "Automation",
+            "Cloud+DevOps": "Automation",
+            "Frontend+React": "Advanced Frontend",
+            "React+Frontend": "Advanced Frontend",
+            "Node.js+Backend": "Fullstack JS",
+            "Backend+Node.js": "Fullstack JS",
+            "Cloud+Docker": "Containerized App",
+            "Docker+Cloud": "Containerized App",
+            "Processing+Analytics": "Insights",
+            "Analytics+Processing": "Insights",
+            "Processing+AI": "Machine Learning",
+            "AI+Processing": "Machine Learning",
+            "Analytics+AI": "AI Insights",
+            "AI+Analytics": "AI Insights",
+            "Cloud+AI": "AI Cloud",
+            "AI+Cloud": "AI Cloud", // Duplicate to handle both orders
+            "CICD+Monitoring": "Deployment",
+            "Monitoring+CICD": "Deployment",
+            "Monitoring+DevOps": "Observability",
+            "DevOps+Monitoring": "Observability",
+            "Cloud+Security": "Secure Cloud",
+            "Security+Cloud": "Secure Cloud",
+            "Backend+GraphQL": "API",
+            "GraphQL+Backend": "API",
+            "Frontend+API": "Driven App",
+            "API+Frontend": "Driven App",
+            "Driven App+Mobile": "Mobile App",
+            "Mobile+Driven App": "Mobile App",
+            "Cloud+Kubernetes": "Scalable App",
+            "Kubernetes+Cloud": "Scalable App",
+            "Automation+Observability": "Healing System",
+            "Observability+Automation": "Healing System",
+            "Fullstack+UI": "User App",
+            "UI+Fullstack": "User App",
+            "Analytics+Big Data": "Big Insights",
+            "Big Data+Analytics": "Big Insights",
+            "Big Data+Machine Learning": "AI Big Data",
+            "Machine Learning+Big Data": "AI Big Data",
+            "Frontend+Testing": "Testable Frontend",
+            "Testing+Frontend": "Testable Frontend",
+            "Backend+Testing": "Testable Backend",
+            "Testing+Backend": "Testable Backend",
+            "Fullstack+Testing": "Testable App",
+            "Testing+Fullstack": "Testable App",
+            "AI+Language": "AI NLP",
+            "Language+AI": "AI NLP",
+            "NLP+Cloud": "AI Chatbot",
+            "Cloud+NLP": "AI Chatbot",
+            "Processing+IoT": "IoT Data",
+            "IoT+Processing": "IoT Data",
+            "IoT+AI": "Smart IoT",
+            "AI+IoT": "Smart IoT",
+            "Cloud+Blockchain": "Decentralized App",
+            "Blockchain+Cloud": "Decentralized App",
+            "Backend+Blockchain": "Blockchain Backend",
+            "Blockchain+Backend": "Blockchain Backend",
+            "Frontend+Blockchain": "Web3 Frontend",
+            "Blockchain+Frontend": "Web3 Frontend",
+            "Web3 Frontend+Backend": "Web3 Stack",
+            "Backend+Web3 Frontend": "Web3 Stack",
+            "Java+Kotlin": "Android",
+            "Kotlin+Java": "Android",
+            "Swift+UIKit": "iOS",
+            "UIKit+Swift": "iOS",
+            "Android+iOS": "Mobile Dev",
+            "iOS+Android": "Mobile Dev",
+            "Mobile+AI": "Smart Mobile",
+            "AI+Mobile": "Smart Mobile",
+                // Additional backend merges
+            "Java+PHP": "Backend",
+            "PHP+Java": "Backend",
+            "Java+Python": "Backend",
+            "Python+Java": "Backend",
+            "PHP+Node.js": "Backend",
+            "Node.js+PHP": "Backend",
+
+            // More Frontend merges
+            "HTML+JavaScript": "Basic Frontend",
+            "JavaScript+HTML": "Basic Frontend",
+            "CSS+JavaScript": "Basic Frontend",
+            "JavaScript+CSS": "Basic Frontend",
+
+            // Database merges
+            "SQL+NoSQL": "Database",
+            "NoSQL+SQL": "Database",
+
+            // Cloud merges
+            "Cloud+Serverless": "Serverless Cloud",
+            "Serverless+Cloud": "Serverless Cloud",
+            "Cloud+Database": "Cloud Database",
+            "Database+Cloud": "Cloud Database",
+            "DevOps+Kubernetes": "Container Orchestration",
+            "Kubernetes+DevOps": "Container Orchestration",
+
+            // AI merges
+            "AI+Big Data": "AI Big Data",
+            "Big Data+AI": "AI Big Data",
+            "AI+NLP": "AI NLP",
+            "NLP+AI": "AI NLP",
+            "AI+Computer Vision": "AI Vision",
+            "Computer Vision+AI": "AI Vision",
+
+            // Mobile merges
+            "Swift+ SwiftUI": "iOS",
+            "SwiftUI+Swift": "iOS",
+            "Kotlin+Jetpack Compose": "Android",
+            "Jetpack Compose+Kotlin": "Android",
+        };
+
+        // Initialize select area (with type-based colors)
+        function initializeSelectArea() {
+            words.forEach((wordObj) => {
+                const wordDiv = createWordElement(wordObj.text);
+                wordDiv.classList.add(wordObj.type); // Add type class for styling
+                selectArea.appendChild(wordDiv);
+            });
+        }
+
+        // Create a word element
+        function createWordElement(text) {
+            const div = document.createElement("div");
+            div.className = "word";
+            div.draggable = true;
+            div.textContent = text;
+            div.dataset.originalText = text; // Store original text in a data attribute
+            div.addEventListener("dragstart", dragStart);
+            return div;
+        }
+
+        // Drag and Drop
+        let draggedElement = null;
+        let mergeIndicator = null; 
+
+        // ... (drag and drop functions - dragStart, dragOver, dragLeave, drop)
+        function dragStart(e) {
+            draggedElement = e.target;
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            const target = e.target;
+            if (target === mergeArea || target.closest(".merge-container")) {
+                mergeArea.classList.add("active");
+                showMergeIndicator(e); 
+            } else if (target === bin) {
+                bin.classList.add("active");
+            }
+        }
+
+        function dragLeave(e) {
+            const target = e.target;
+            if (target === mergeArea || target.closest(".merge-container")) {
+                mergeArea.classList.remove("active");
+                hideMergeIndicator();
+            } else if (target === bin) {
+                bin.classList.remove("active");
+            }
+        }
+        function drop(e) {
+            e.preventDefault();
+            const target = e.target;
+            if (target === mergeArea || target.closest(".merge-container")) {
+                mergeArea.classList.remove("active");
+                hideMergeIndicator();
+
+                // Always clone and append the dragged element first
+                const clone = draggedElement.cloneNode(true);
+                mergeArea.appendChild(clone);
+
+                // Check if there are at least two elements in the merge area
+                const items = mergeArea.querySelectorAll(".word");
+                if (items.length >= 2) {
+                    checkForMerge(); // Perform merge check only if there are two or more elements
+                }
+            } else if (target === bin && draggedElement) {
+                bin.classList.remove("active");
+                draggedElement.remove();
+            }
+        }
+        // Merge Indicator
+        function showMergeIndicator(e) {
+            const items = [...mergeArea.querySelectorAll(".word")];
+            if (items.length > 0 && draggedElement) {
+                const lastItem = items[items.length - 1];
+
+                // Check if the last item is already a merge indicator
+                if (!lastItem.classList.contains("merge-indicator")) { 
+                    const key1 = `${lastItem.textContent}+${draggedElement.textContent}`;
+                    const key2 = `${draggedElement.textContent}+${lastItem.textContent}`;
+
+                    if (merges[key1] || merges[key2]) {
+                        lastItem.classList.add("merge-indicator");
+                        lastItem.textContent = merges[key1] || merges[key2];
+                    } else {
+                        hideMergeIndicator();
+                    }
+                } // Otherwise, do nothing (don't keep updating the text)
+            }
+        }
+
+        function hideMergeIndicator() {
+            const indicator = mergeArea.querySelector(".merge-indicator");
+            if (indicator) {
+                indicator.classList.remove("merge-indicator");
+                indicator.textContent = indicator.dataset.originalText; // Restore original text
+            }
+        }
+
+        // Merge Logic (Modified for multiple elements)
+        function checkForMerge() {
+            const items = [...mergeArea.querySelectorAll(".word")];
+            if (items.length >= 2) {
+                const firstItem = items[items.length - 2]; // Second to last item
+                const lastItem = items[items.length - 1];  // Last item
+                const key1 = `${firstItem.textContent}+${lastItem.textContent}`;
+                const key2 = `${lastItem.textContent}+${firstItem.textContent}`;
+
+                if (merges[key1]) {
+                    performMerge(firstItem, lastItem, merges[key1]);
+                } else if (merges[key2]) {
+                    performMerge(lastItem, firstItem, merges[key2]);
+                }
+            }
+        }
+
+        function performMerge(item1, item2, result) {
+            item1.remove();
+            item2.remove();
+
+            const newWord = createWordElement(result);
+            
+            // Set the type of all merged elements to "merged"
+            newWord.classList.add("merged"); 
+
+            // Add newWord to selectArea and make it draggable
+            const newWordForSelect = newWord.cloneNode(true);
+            newWordForSelect.addEventListener('dragstart', dragStart);
+            selectArea.appendChild(newWordForSelect);
+
+
+            // Remove all other elements from the merge area
+            const itemsToClear = mergeArea.querySelectorAll(".word");
+            itemsToClear.forEach(item => {
+                if (item !== newWord) {
+                    item.remove();
+                }
+            });
+        }
+
+        // Event Listeners (using event delegation)
+        document.addEventListener("dragover", dragOver);
+        document.addEventListener("dragleave", dragLeave);
+        document.addEventListener("drop", drop);
+
+        // Initialize
+        initializeSelectArea();
+    </script>
+</body>
+</html>
